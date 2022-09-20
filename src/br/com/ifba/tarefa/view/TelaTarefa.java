@@ -2,13 +2,20 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package br.com.ifba.hibernate.view;
+package br.com.ifba.tarefa.view;
 
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import br.com.ifba.hibernate.model.Tarefa;
+import br.com.ifba.tarefa.entities.Tarefa;
+import br.com.ifba.tarefa.dao.TarefaDAO;
+import java.util.ArrayList;
+import java.util.List;
 import javax.persistence.Persistence;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
@@ -23,6 +30,9 @@ public class TelaTarefa extends javax.swing.JFrame {
      */
     public TelaTarefa() {
         initComponents();
+        this.setLocationRelativeTo(null);// para iniciar a tela no centro do computador
+        List<Tarefa> tarefas = obterTodos();
+        prencherTabela(tarefas);
     }
 
     /**
@@ -44,9 +54,9 @@ public class TelaTarefa extends javax.swing.JFrame {
         txtDes = new javax.swing.JTextField();
         lblData = new javax.swing.JLabel();
         jdcData = new com.toedter.calendar.JDateChooser();
-        jLabel1 = new javax.swing.JLabel();
+        lblTitulo = new javax.swing.JLabel();
         txtPesquisa = new javax.swing.JTextField();
-        jLabel2 = new javax.swing.JLabel();
+        lblPesquisar = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -108,9 +118,9 @@ public class TelaTarefa extends javax.swing.JFrame {
         lblData.setForeground(new java.awt.Color(255, 255, 255));
         lblData.setText("Data:");
 
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
-        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel1.setText("Tarefas");
+        lblTitulo.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
+        lblTitulo.setForeground(new java.awt.Color(255, 255, 255));
+        lblTitulo.setText("Tarefas");
 
         txtPesquisa.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
@@ -118,9 +128,9 @@ public class TelaTarefa extends javax.swing.JFrame {
             }
         });
 
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel2.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel2.setText("Pesquisar:");
+        lblPesquisar.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        lblPesquisar.setForeground(new java.awt.Color(255, 255, 255));
+        lblPesquisar.setText("Pesquisar:");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -145,11 +155,11 @@ public class TelaTarefa extends javax.swing.JFrame {
                                         .addGap(69, 69, 69)))
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(btnEditar)
-                                    .addComponent(jLabel1))
+                                    .addComponent(lblTitulo))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(jPanel1Layout.createSequentialGroup()
-                                        .addComponent(jLabel2)
+                                        .addComponent(lblPesquisar)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(txtPesquisa, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE))
                                     .addComponent(btnDeletar))
@@ -166,13 +176,13 @@ public class TelaTarefa extends javax.swing.JFrame {
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addGap(14, 14, 14)
-                .addComponent(jLabel1)
+                .addComponent(lblTitulo)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 43, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblDescricao)
                     .addComponent(txtDes, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtPesquisa, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel2))
+                    .addComponent(lblPesquisar))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jdcData, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -210,8 +220,21 @@ public class TelaTarefa extends javax.swing.JFrame {
         //setando os dados no banco de dados
         tab.setDescricao(txtDes.getText());
         tab.setDataFinalizacao(jdcData.getDate());
+        tab.setFinalizado(true);
         
-        //chamando o banco de dados
+        //instanciando novo objeto da classe TarefaDAO
+        TarefaDAO gen = new TarefaDAO();
+        
+        //salvando os dados no banco
+        gen.save(tab);
+        
+        //cadastrando os dados da tabela da tela
+        DefaultTableModel tar = (DefaultTableModel) tblTabela.getModel();
+        Object[] dados = {tab.getId(),tab.getDescricao(),tab.getDataFinalizacao(),tab.isFinalizado()};
+        tar.addRow(dados);
+        
+        
+        /*//chamando o banco de dados
         EntityManagerFactory factory = Persistence.createEntityManagerFactory("meubanco");
         EntityManager manager = factory.createEntityManager();
         
@@ -221,21 +244,35 @@ public class TelaTarefa extends javax.swing.JFrame {
         manager.getTransaction().commit();
         
         manager.close();
-        factory.close();
-        
-        //cadastrando os dados da tabela da tela
-        DefaultTableModel tar = (DefaultTableModel) tblTabela.getModel();
-        Object[] dados = {tab.getId(),tab.getDescricao(),tab.getDataFinalizacao(),tab.isFinalizado()};
-        tar.addRow(dados);
-        
+        factory.close();*/
         
     }//GEN-LAST:event_btnCadastrarActionPerformed
 
     private void btnDeletarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeletarActionPerformed
         // TODO add your handling code here:
+        //instanciando novo objeto da classe TarefaDAO
+        TarefaDAO gen = new TarefaDAO();
+        
+        //instanciando novo objeto da classe Tarefa
+        Tarefa tab = new Tarefa();
+        
+        int linha = tblTabela.getSelectedRow();//pegando a linha da tabela
+        Long id = (Long) tblTabela.getValueAt(linha, 0);//pegando o id da tarefa
+        
+        tab = gen.getById(id);//pegando o id 
+        
+        gen.delete(tab);//deletando do banco
+        
+        //deletando os dados da tabela
+        if(tblTabela.getSelectedRow() != -1){
+            DefaultTableModel tar = (DefaultTableModel) tblTabela.getModel();
+            tar.removeRow(tblTabela.getSelectedRow());
+        }else{
+            JOptionPane.showMessageDialog(null, "Erro!");
+        }
         
         //chamando o banco
-        EntityManagerFactory factory = Persistence.createEntityManagerFactory("meubanco");
+        /*EntityManagerFactory factory = Persistence.createEntityManagerFactory("meubanco");
         EntityManager manager = factory.createEntityManager();
         
         int linha = tblTabela.getSelectedRow();//pegando a linha da tabela
@@ -249,22 +286,33 @@ public class TelaTarefa extends javax.swing.JFrame {
         manager.getTransaction().commit();
         
         manager.close();
-        factory.close();
-        
-         //deletando os dados da tabela
-        if(tblTabela.getSelectedRow() != -1){
-            DefaultTableModel tar = (DefaultTableModel) tblTabela.getModel();
-            tar.removeRow(tblTabela.getSelectedRow());
-        }else{
-            JOptionPane.showMessageDialog(null, "Erro!");
-        }
+        factory.close();*/
         
     }//GEN-LAST:event_btnDeletarActionPerformed
 
     private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
         // TODO add your handling code here:
+        TarefaDAO gen = new TarefaDAO();
+        
+        Tarefa tab = new Tarefa();
+        int linha = tblTabela.getSelectedRow();//pegando a linha da tabela
+        Long id = (Long) tblTabela.getValueAt(linha, 0);//pegando o id da tarefa
+        
+        tab = gen.getById(id);
+        
+        //setando os novos valores no banco de dados
+        tab.setDescricao(txtDes.getText());
+        tab.setDataFinalizacao(jdcData.getDate());
+        tab.setFinalizado(true);
+        
+        gen.update(tab);//atualizando no banco
+        
+        if(tblTabela.getSelectedRow() != -1){
+            tblTabela.setValueAt(txtDes.getText(), tblTabela.getSelectedRow(), 1);
+            tblTabela.setValueAt(jdcData.getDate(), tblTabela.getSelectedRow(), 2);
+        }
         //editando os dados no banco
-        EntityManagerFactory factory = Persistence.createEntityManagerFactory("meubanco");
+        /*EntityManagerFactory factory = Persistence.createEntityManagerFactory("meubanco");
         EntityManager manager = factory.createEntityManager();
         
         int linha = tblTabela.getSelectedRow();//pegando a linha da tabela
@@ -281,29 +329,62 @@ public class TelaTarefa extends javax.swing.JFrame {
         manager.getTransaction().commit();
     
         manager.close();
-        factory.close();
-        
-        //editando os dados na tabela
-        if(tblTabela.getSelectedRow() != -1){
-            tblTabela.setValueAt(txtDes.getText(), tblTabela.getSelectedRow(), 1);
-            tblTabela.setValueAt(jdcData.getDate(), tblTabela.getSelectedRow(), 2);
-        }
+        factory.close();*/
         
     }//GEN-LAST:event_btnEditarActionPerformed
 
+    
+    public List<Tarefa> obterTodos(){
+        
+        EntityManagerFactory factory = Persistence.createEntityManagerFactory("meubanco");
+        EntityManager manager = factory.createEntityManager();
+        
+        //obtendo todos os dados do banco
+        manager.getTransaction().begin();
+        CriteriaBuilder cb = manager.getCriteriaBuilder();
+        CriteriaQuery<Tarefa> cq = cb.createQuery(Tarefa.class);
+        Root<Tarefa> rootEntry = cq.from(Tarefa.class);
+        CriteriaQuery<Tarefa> all = cq.select(rootEntry);
+        TypedQuery<Tarefa> allQuery = manager.createQuery(all);
+        List<Tarefa> tarefas = allQuery.getResultList();
+        
+        manager.close();
+        factory.close();
+        
+        return tarefas;
+    }
+     public void prencherTabela(List<Tarefa> tarefas){
+         
+         DefaultTableModel tar = (DefaultTableModel) tblTabela.getModel();
+         tar.setNumRows(0);
+         
+         //prenchendo a tabela com os dados
+         for(Tarefa tarefa: tarefas){
+               Object[] dados = {tarefa.getId(),tarefa.getDescricao(),tarefa.getDataFinalizacao(),tarefa.isFinalizado()};
+               tar.addRow(dados);
+        }
+     }
+    
     private void txtPesquisaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtPesquisaKeyPressed
         // TODO add your handling code here:
         
+        //pegando o dado para pesquisar
         String busca = (txtPesquisa.getText()).toLowerCase();
-        
-        Tarefa tab = new Tarefa();
         
         DefaultTableModel tar = (DefaultTableModel) tblTabela.getModel();
         tar.setNumRows(0);
         
-        if ((tab.getDescricao().toLowerCase()).contains(busca)) {
-             tar.addRow(new Object[] {tab.getId(),tab.getDescricao(),tab.getDataFinalizacao(),tab.isFinalizado()});
+        //criando uma lista de tarefas
+        List<Tarefa> tarefas = obterTodos();
+        
+        //for para verificação do dado digitado é igual ao pesquisado
+        for(Tarefa tarefa: tarefas){
+            if(tarefa.getDescricao().toLowerCase().contains(busca)){
+               Object[] dados = {tarefa.getId(),tarefa.getDescricao(),tarefa.getDataFinalizacao(),tarefa.isFinalizado()};
+               tar.addRow(dados);
+            }
         }
+    
         
     }//GEN-LAST:event_txtPesquisaKeyPressed
 
@@ -346,14 +427,14 @@ public class TelaTarefa extends javax.swing.JFrame {
     private javax.swing.JButton btnCadastrar;
     private javax.swing.JButton btnDeletar;
     private javax.swing.JButton btnEditar;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private com.toedter.calendar.JDateChooser jdcData;
     private javax.swing.JLabel lblData;
     private javax.swing.JLabel lblDescricao;
-    public javax.swing.JTable tblTabela;
+    private javax.swing.JLabel lblPesquisar;
+    private javax.swing.JLabel lblTitulo;
+    private javax.swing.JTable tblTabela;
     private javax.swing.JTextField txtDes;
     private javax.swing.JTextField txtPesquisa;
     // End of variables declaration//GEN-END:variables

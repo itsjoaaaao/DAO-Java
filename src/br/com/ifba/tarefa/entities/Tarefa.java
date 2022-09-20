@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package br.com.ifba.hibernate.model;
+package br.com.ifba.tarefa.entities;
 
 import java.util.Date;
 import javax.persistence.Column;
@@ -18,12 +18,9 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name="tarefas")
-public class Tarefa {
+public class Tarefa extends AbstractEntity{
     
     //atrubutos da classe tarefa
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long Id;
     private String descricao;
     private boolean finalizado;
     
@@ -35,14 +32,6 @@ public class Tarefa {
     }
 
     //setters e getters
-    public long getId() {
-        return Id;
-    }
-
-    public void setId(long Id) {
-        this.Id = Id;
-    }
-
     public String getDescricao() {
         return descricao;
     }

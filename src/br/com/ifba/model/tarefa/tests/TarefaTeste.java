@@ -4,8 +4,8 @@
  */
 package br.com.ifba.model.tarefa.tests;
 
-import br.com.ifba.hibernate.model.Tarefa;
-import br.com.ifba.hibernate.view.TelaTarefa;
+import br.com.ifba.tarefa.entities.Tarefa;
+import br.com.ifba.tarefa.view.TelaTarefa;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
