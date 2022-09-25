@@ -8,7 +8,8 @@ package br.com.ifba.tarefa.view;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import br.com.ifba.tarefa.entities.Tarefa;
-import br.com.ifba.tarefa.dao.TarefaDAO;
+import br.com.ifba.tarefa.dao.DAOTarefa;
+import br.com.ifba.tarefa.infrastructure.service.Facade;
 import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.Persistence;
@@ -28,6 +29,9 @@ public class TelaTarefa extends javax.swing.JFrame {
     /**
      * Creates new form TelaTarefa
      */
+    
+    Facade fac = new Facade();
+    
     public TelaTarefa() {
         initComponents();
         this.setLocationRelativeTo(null);// para iniciar a tela no centro do computador
@@ -223,10 +227,9 @@ public class TelaTarefa extends javax.swing.JFrame {
         tab.setFinalizado(true);
         
         //instanciando novo objeto da classe TarefaDAO
-        TarefaDAO gen = new TarefaDAO();
+        fac.saveTarefa(tab);
         
         //salvando os dados no banco
-        gen.save(tab);
         
         //cadastrando os dados da tabela da tela
         DefaultTableModel tar = (DefaultTableModel) tblTabela.getModel();
@@ -234,24 +237,10 @@ public class TelaTarefa extends javax.swing.JFrame {
         tar.addRow(dados);
         
         
-        /*//chamando o banco de dados
-        EntityManagerFactory factory = Persistence.createEntityManagerFactory("meubanco");
-        EntityManager manager = factory.createEntityManager();
-        
-        //cadastrando no banco de dados
-        manager.getTransaction().begin();
-        manager.persist(tab);
-        manager.getTransaction().commit();
-        
-        manager.close();
-        factory.close();*/
-        
     }//GEN-LAST:event_btnCadastrarActionPerformed
 
     private void btnDeletarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeletarActionPerformed
         // TODO add your handling code here:
-        //instanciando novo objeto da classe TarefaDAO
-        TarefaDAO gen = new TarefaDAO();
         
         //instanciando novo objeto da classe Tarefa
         Tarefa tab = new Tarefa();
@@ -259,9 +248,9 @@ public class TelaTarefa extends javax.swing.JFrame {
         int linha = tblTabela.getSelectedRow();//pegando a linha da tabela
         Long id = (Long) tblTabela.getValueAt(linha, 0);//pegando o id da tarefa
         
-        tab = gen.getById(id);//pegando o id 
+        tab.setId(id);//pegando o id 
         
-        gen.delete(tab);//deletando do banco
+        fac.deleteTarefa(tab);//deletando do banco
         
         //deletando os dados da tabela
         if(tblTabela.getSelectedRow() != -1){
@@ -271,87 +260,36 @@ public class TelaTarefa extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Erro!");
         }
         
-        //chamando o banco
-        /*EntityManagerFactory factory = Persistence.createEntityManagerFactory("meubanco");
-        EntityManager manager = factory.createEntityManager();
-        
-        int linha = tblTabela.getSelectedRow();//pegando a linha da tabela
-        Long id = (Long) tblTabela.getValueAt(linha, 0);//pegando o id da tarefa
-        
-        Tarefa enc = manager.find(Tarefa.class, id);//instanciando o manager.find
-    
-        //removendo do banco
-        manager.getTransaction().begin();
-        manager.remove(enc);
-        manager.getTransaction().commit();
-        
-        manager.close();
-        factory.close();*/
         
     }//GEN-LAST:event_btnDeletarActionPerformed
 
     private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
-        // TODO add your handling code here:
-        TarefaDAO gen = new TarefaDAO();
+        // TODO add your handling code here
         
         Tarefa tab = new Tarefa();
         int linha = tblTabela.getSelectedRow();//pegando a linha da tabela
         Long id = (Long) tblTabela.getValueAt(linha, 0);//pegando o id da tarefa
         
-        tab = gen.getById(id);
+        tab.setId(id);
         
         //setando os novos valores no banco de dados
         tab.setDescricao(txtDes.getText());
         tab.setDataFinalizacao(jdcData.getDate());
         tab.setFinalizado(true);
         
-        gen.update(tab);//atualizando no banco
+        fac.updateTarefa(tab);//atualizando no banco
         
         if(tblTabela.getSelectedRow() != -1){
             tblTabela.setValueAt(txtDes.getText(), tblTabela.getSelectedRow(), 1);
             tblTabela.setValueAt(jdcData.getDate(), tblTabela.getSelectedRow(), 2);
         }
-        //editando os dados no banco
-        /*EntityManagerFactory factory = Persistence.createEntityManagerFactory("meubanco");
-        EntityManager manager = factory.createEntityManager();
-        
-        int linha = tblTabela.getSelectedRow();//pegando a linha da tabela
-        Long id = (Long) tblTabela.getValueAt(linha, 0);//pegando o id da tarefa
-        
-        Tarefa enc = manager.find(Tarefa.class, id);
-        
-        //setando o novos dados na tarefa
-        enc.setDescricao(txtDes.getText());
-        enc.setDataFinalizacao(jdcData.getDate());
-        
-        manager.getTransaction().begin();
-        manager.merge(enc);
-        manager.getTransaction().commit();
-    
-        manager.close();
-        factory.close();*/
         
     }//GEN-LAST:event_btnEditarActionPerformed
 
     
     public List<Tarefa> obterTodos(){
         
-        EntityManagerFactory factory = Persistence.createEntityManagerFactory("meubanco");
-        EntityManager manager = factory.createEntityManager();
-        
-        //obtendo todos os dados do banco
-        manager.getTransaction().begin();
-        CriteriaBuilder cb = manager.getCriteriaBuilder();
-        CriteriaQuery<Tarefa> cq = cb.createQuery(Tarefa.class);
-        Root<Tarefa> rootEntry = cq.from(Tarefa.class);
-        CriteriaQuery<Tarefa> all = cq.select(rootEntry);
-        TypedQuery<Tarefa> allQuery = manager.createQuery(all);
-        List<Tarefa> tarefas = allQuery.getResultList();
-        
-        manager.close();
-        factory.close();
-        
-        return tarefas;
+        return fac.getAllTarefa();
     }
      public void prencherTabela(List<Tarefa> tarefas){
          

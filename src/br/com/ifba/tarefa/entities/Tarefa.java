@@ -4,6 +4,7 @@
  */
 package br.com.ifba.tarefa.entities;
 
+import br.com.ifba.tarefa.infrastructure.model.PersistenceEntity;
 import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -18,7 +19,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name="tarefas")
-public class Tarefa extends AbstractEntity{
+public class Tarefa extends PersistenceEntity{
     
     //atrubutos da classe tarefa
     private String descricao;
